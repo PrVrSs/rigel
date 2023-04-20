@@ -1,0 +1,17 @@
+# Unit test / coverage reports
+.coverage
+.pytest_cache/
+
+coverage.xml
+
+# Environments
+venv/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+dist
+build
+_build
