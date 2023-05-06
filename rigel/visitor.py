@@ -17,6 +17,20 @@ class InstructionVisitor:
         raise UnknownInstructionError
 
 
+class BlockVisitor:
+    """"""
+    def visit(self, block):
+        return getattr(
+            self,
+            f'visit_{block.__class__.__name__.lower()}',
+            self.generic_visit,
+        )(block)
+
+    def generic_visit(self, blocks):
+        for block in blocks:
+            self.visit(block)
+
+
 class Listener:
     def walk(self, node) -> None:
         with self._listener(node):

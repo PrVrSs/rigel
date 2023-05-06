@@ -3,10 +3,10 @@ from collections import deque
 from types import CodeType
 from typing import Iterable
 
-from .cfg import CFGBuilder, calculate_stack_size
-from .instruction import BaseInstruction, convert
-from .lnotab import assemble_lnotab
-from .utils import CompilerFlags, create_code_object
+from rigel.cfg import CFGBuilder, calculate_stack_size
+from rigel.instruction import BaseInstruction, convert
+from rigel.lnotab import assemble_lnotab
+from rigel.utils import CompilerFlags, create_code_object
 
 
 class Code:  # pylint: disable=too-many-instance-attributes

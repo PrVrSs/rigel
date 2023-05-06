@@ -1,6 +1,7 @@
 import marshal
 import struct
 import sys
+import time
 from dataclasses import dataclass
 
 
@@ -49,21 +50,40 @@ def dump(code, fp, *, version: tuple[int, int]) -> None:
 @dataclass
 class CodeInfo:
     python_version: tuple[int, int]
-    timestamp: bytes
-    raw_size: bytes
+    modified: bytes
+    source_size: bytes
     code: bytes
+
+    def __repr__(self):
+        return '\n'.join([
+            f'python_version={self.unpack_python_version()}',
+            f'timestamp={self.unpack_modified()}',
+            f'file_size={self.unpack_source_size()}b',
+        ])
+
+    def unpack_modified(self) -> str:
+        return time.asctime(time.localtime(struct.unpack('=L', self.modified)[0]))
+
+    def unpack_source_size(self) -> int:
+        return struct.unpack('=L', self.source_size)[0]
+
+    def unpack_code(self):
+        return marshal.loads(self.code)
+
+    def unpack_python_version(self):
+        return PYTHON_MAGIC_VERSION_MAP[struct.unpack('<H', self.python_version)[0]]
 
 
 def load(fp) -> CodeInfo:
     """Deserialize ``fp`` to a Python object."""
-    python_version = PYTHON_MAGIC_VERSION_MAP[struct.unpack('<H', fp.read(2))[0]]
+    python_version = fp.read(2)
 
     _ = fp.read(2)  # cr, lf
     _ = fp.read(4)  # bit_field
 
     return CodeInfo(
         python_version=python_version,
-        timestamp=fp.read(4),
-        raw_size=fp.read(4),
+        modified=fp.read(4),
+        source_size=fp.read(4),
         code=fp.read(),
     )

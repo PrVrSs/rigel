@@ -28,11 +28,18 @@ print(test_func(r'string 2'))
 print(test_func2(r'string 3'))
 """
 
+loop_str = """
+a = 0
+for _ in range(10):
+    a += 1
+"""
+
 
 @pytest.mark.parametrize('test_input, expected', [
     (print_str, {}),
     (two_print_str, {}),
-    (func_print_str, {})
+    (func_print_str, {}),
+    (loop_str, {}),
 ])
 def test_code(test_input, expected):
     native_code = compile(dedent(test_input), '<string>', 'exec')

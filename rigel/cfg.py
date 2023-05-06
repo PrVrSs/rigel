@@ -36,20 +36,37 @@ class Block:
     def add(self, instruction: BaseInstruction):
         self._instructions.append(instruction)
 
+    def add_exit(self, block):
+        """Adds an exit from this block to `block`."""
+        self.next.add(block)
+        block.prev.add(self)
+
+    def get_source(self):
+        return '\n'.join([str(inst) for inst in self._instructions])
+
+
+class For(Block):
+    pass
+
 
 class Frame:
     pass
 
 
+def add_instruction_to_block(_, instruction: BaseInstruction, block: Block) -> Block:
+    block.add(instruction)
+    return block
+
+
 class ControlFlowGraph:
-    def __init__(self):
+    def __init__(self, start_block):
+        self.start_block = start_block
+
         self._blocks = []
-
-        self.start_block = self.new_block()
-        self.start_block.label = '<start>'
-
         self._consts = []
         self._names = []
+
+        self._blocks.append(start_block)
 
     @property
     def co_consts(self):
@@ -65,18 +82,14 @@ class ControlFlowGraph:
     def add_name(self, name):
         self._names.append(name)
 
-    def new_block(self, label=None):
-        block = Block(label=label)
-        block.graph = self
-        self._blocks.append(block)
-        return block
-
 
 class CFGBuilder(InstructionVisitor):
     """A visitor for determining the control flow of a Python program from an instructions."""
     def __init__(self):
-        self._cfg = ControlFlowGraph()
         self._frames = []
+
+        self.current_block = Block(label='<start>')
+        self._cfg = ControlFlowGraph(self.current_block)
 
     def build(self, instructions: list[BaseInstruction]) -> ControlFlowGraph:
         current_block = self._cfg.start_block
@@ -85,6 +98,13 @@ class CFGBuilder(InstructionVisitor):
             current_block = self.visit(instruction, current_block)
 
         return self._cfg
+
+    visit_pop_top = add_instruction_to_block
+    visit_inplace_add = add_instruction_to_block
+    visit_return_value = add_instruction_to_block
+    visit_call_function = add_instruction_to_block
+    visit_get_iter = add_instruction_to_block
+    visit_make_function = add_instruction_to_block
 
     def visit_load_name(self, instruction: BaseInstruction, block: Block) -> Block:
         self._cfg.add_name(instruction.argval)
@@ -98,31 +118,24 @@ class CFGBuilder(InstructionVisitor):
 
         return block
 
-    def visit_call_function(self, instruction: BaseInstruction, block: Block) -> Block:
-        block.add(instruction)
-
-        return block
-
-    def visit_pop_top(self, instruction: BaseInstruction, block: Block) -> Block:
-        block.add(instruction)
-
-        return block
-
-    def visit_return_value(self, instruction: BaseInstruction, block: Block) -> Block:
-        block.add(instruction)
-
-        return block
-
-    def visit_make_function(self, instruction: BaseInstruction, block: Block) -> Block:
-        block.add(instruction)
-
-        return block
-
     def visit_store_name(self, instruction: BaseInstruction, block: Block) -> Block:
         self._cfg.add_name(instruction.argval)
         block.add(instruction)
 
         return block
+
+    def visit_for_iter(self, instruction: BaseInstruction, block: Block) -> Block:
+        new_block = For(label='<for>')
+        new_block.add(instruction)
+        block.add_exit(new_block)
+        return new_block
+
+    def visit_jump_absolute(self, instruction: BaseInstruction, block: Block) -> Block:
+        block.add(instruction)
+
+        new_block = Block()
+        block.add_exit(new_block)
+        return new_block
 
 
 def build_cfg(instructions: list[BaseInstruction]):

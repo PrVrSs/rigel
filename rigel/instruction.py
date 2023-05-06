@@ -113,6 +113,9 @@ class BaseInstruction(metaclass=MetaInstruction):  # pylint: disable=too-many-in
         self.starts_line = starts_line
         self.is_jump_target = is_jump_target
 
+    def __repr__(self):
+        return f'{self.opname} arg {self.arg} | argrepr `{self.argrepr}` | offset  {self.offset}'
+
     def get_stack_effect(self):
         return dis.stack_effect(self.opcode, self.oparg)
 
@@ -217,12 +220,32 @@ class CallFunction(WithArgument):
     FLAG = IFlag.HAS_NARGS | IFlag.HAS_ARGUMENT | IFlag.HAS_JUNKNOWN
 
 
+class GetIter(BaseInstruction):
+    pass
+
+
+class ForIter(WithArgument):
+    FLAG = IFlag.HAS_JREL | IFlag.HAS_ARGUMENT
+
+
+class JumpAbsolute(WithArgument):
+    FLAG = IFlag.HAS_JABS | IFlag.HAS_ARGUMENT | IFlag.NO_NEXT
+
+
+class InplaceAdd(BaseInstruction):
+    pass
+
+
 PYTHON_OPCODE_INSTRUCTION_MAP = {
     1: PopTop,
+    55: InplaceAdd,
+    68: GetIter,
     83: ReturnValue,
     90: StoreName,
+    93: ForIter,
     100: LoadConst,
     101: LoadName,
+    113: JumpAbsolute,
     131: CallFunction,
     132: MakeFunction,
 }
