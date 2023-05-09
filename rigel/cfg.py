@@ -1,6 +1,6 @@
 import uuid
 
-from more_itertools import unique_everseen
+from more_itertools import first_true, unique_everseen
 
 from rigel.instruction import BaseInstruction
 from rigel.visitor import InstructionVisitor
@@ -91,6 +91,23 @@ class CFGBuilder(InstructionVisitor):
         self.current_block = Block(label='<start>')
         self._cfg = ControlFlowGraph(self.current_block)
 
+        self._split_offsets = []
+
+    def visit(self, instruction, block):
+        calc_block, offset = first_true(
+            iterable=self._split_offsets,
+            default=(block, None),
+            pred=lambda block_offset_pair: block_offset_pair[1] == instruction.offset
+        )
+
+        if offset is None:
+            return super().visit(instruction, calc_block)
+
+        new_block = Block()
+        calc_block.add_exit(new_block)
+
+        return super().visit(instruction, new_block)
+
     def build(self, instructions: list[BaseInstruction]) -> ControlFlowGraph:
         current_block = self._cfg.start_block
 
@@ -105,6 +122,7 @@ class CFGBuilder(InstructionVisitor):
     visit_call_function = add_instruction_to_block
     visit_get_iter = add_instruction_to_block
     visit_make_function = add_instruction_to_block
+    visit_compare_op = add_instruction_to_block
 
     def visit_load_name(self, instruction: BaseInstruction, block: Block) -> Block:
         self._cfg.add_name(instruction.argval)
@@ -133,6 +151,13 @@ class CFGBuilder(InstructionVisitor):
     def visit_jump_absolute(self, instruction: BaseInstruction, block: Block) -> Block:
         block.add(instruction)
 
+        new_block = Block()
+        block.add_exit(new_block)
+        return new_block
+
+    def visit_pop_jump_if_false(self, instruction: BaseInstruction, block: Block) -> Block:
+        block.add(instruction)
+        self._split_offsets.append((block, instruction.argval))
         new_block = Block()
         block.add_exit(new_block)
         return new_block

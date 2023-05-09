@@ -87,16 +87,23 @@ def visualize(cfg):
 
 if __name__ == '__main__':
     import dis
+    from pprint import pprint
     from textwrap import dedent
 
-    LOOP = """
-        a = 0
-        for _ in range(10):
-            a += 1
+    IF_STM = """
+        a = 123
+        b = 2
+        if a == 0:
+            print(b)
+        else:
+            print(a)
+        b = 5
         """
 
-    native_code = compile(dedent(LOOP), '<string>', 'exec')
-    instructions = dis.get_instructions(native_code)
+    native_code = compile(dedent(IF_STM), '<string>', 'exec')
+    instructions = list(dis.get_instructions(native_code))
+
+    pprint(instructions)
 
     generated_code = Code(instructions=list(convert(instructions)))
 

@@ -232,6 +232,14 @@ class JumpAbsolute(WithArgument):
     FLAG = IFlag.HAS_JABS | IFlag.HAS_ARGUMENT | IFlag.NO_NEXT
 
 
+class CompareOp(WithArgument):
+    FLAG = IFlag.HAS_ARGUMENT
+
+
+class PopJumpIfFalse(WithArgument):
+    FLAG = IFlag.HAS_JABS | IFlag.HAS_ARGUMENT
+
+
 class InplaceAdd(BaseInstruction):
     pass
 
@@ -245,7 +253,9 @@ PYTHON_OPCODE_INSTRUCTION_MAP = {
     93: ForIter,
     100: LoadConst,
     101: LoadName,
+    107: CompareOp,
     113: JumpAbsolute,
+    114: PopJumpIfFalse,
     131: CallFunction,
     132: MakeFunction,
 }
